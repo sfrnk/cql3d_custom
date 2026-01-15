@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 ###########################################################################
 ## script for converting CQL3D files into parallel form
 ## usage: doparallel.py in.f out.f insertions.f
@@ -6,10 +6,11 @@
 ##        block.mpi    - list of output modules for blocking
 ## YuP[07-2016] removed usage of block.mpi as it was inserting lines at wrong place
 ##        dec.mpi      - list of fortran declaration insructions
+## SF[08-2023] updated to python3 syntax
 ###########################################################################
 
 
-import string, sys
+import sys, string
 
 inf = []  ## input lines
 out = []  ## output lines
@@ -20,7 +21,7 @@ out = []  ## output lines
 
 pat = [] ## pattern for cleaning
 buf = [] ## buffer for continuation lines
-str = '' ## joined line
+strng = '' ## joined line
 
 ## clean single line 
 def cleans(s):
@@ -46,7 +47,7 @@ def cleans(s):
         elif state==2:
             if c=="'":
                 state = 0
-    if string.strip(s)=='':
+    if s.strip()=='':
         return ''
     if len(r)<6:
         r += ' '*6
@@ -55,7 +56,7 @@ def cleans(s):
 ## saving buffer data into out list (c - prefix)
 def printbuf(c=''):
     global buf, out
-    if c!='' and string.strip(buf[0][:6])!='':
+    if c!='' and buf[0][:6].strip()!='':
         ## it is labeled line and it should be commented, so we use new line
         ## with given label and CONTINUE instruction
         out.append(buf[0][:6]+'CONTINUE !***')
@@ -69,7 +70,8 @@ def printbuf(c=''):
 def procbuf():
     if buf==[]:
         return
-    s = string.join(string.split(str),'')
+    blankstr = ''
+    s = blankstr.join(strng.split())
     for p in pat:
         if p in s:
             printbuf('CMPI :::')
@@ -78,11 +80,11 @@ def procbuf():
 
 ## main cleaning module
 def clean():
-    global buf, str, pat
+    global buf, strng, pat
     ## reading patterns for cleaning
     P = open('mpi/patterns.mpi','r').readlines()
     for p in P:
-        pat.append(string.strip(p))
+        pat.append(p.strip())
     ## start processing
     buf = []
     for s in inf:
@@ -91,12 +93,12 @@ def clean():
             buf.append(s)
         elif ss[5]!=' ': ## continuation line
             buf.append(s)
-            str += ss[6:]
+            strng += ss[6:]
             continue
         else: ## normal line
             procbuf()
             buf = [s]
-            str = ss
+            strng = ss
     procbuf()
 
 ###########################################################################
@@ -111,7 +113,7 @@ def start(s, D):
         return False
     if len(s)>5 and s[5]!=' ':
         return False
-    c = string.strip(s[6:])
+    c = s[6:].strip()
     if len(c)==0:
         return False
     pos = 0
@@ -121,7 +123,7 @@ def start(s, D):
         pos += 1
         if pos==len(c):
             break
-    if string.lower(com) in D:
+    if com.lower() in D:
         return False
     return True
 
@@ -136,7 +138,7 @@ def block():
     ## checking that current file is in the list of blocked files
     check = False
     for l in open('mpi/block.mpi','r').readlines():
-        if string.strip(l)==sys.argv[1]:
+        if l.strip()==sys.argv[1]:
             check = True
             break
     if not check: ## current file shouldn't be blocked
@@ -144,7 +146,7 @@ def block():
     ## reading delcaration instructions for detecting inserting point
     D = open('mpi/dec.mpi','r').readlines()
     for i in range(len(D)):
-        D[i] = string.strip(D[i])
+        D[i] = D[i].strip()
     ## searching insertion point and inserting blocking instruction
     state = 0
     for i in range(len(out)):
@@ -165,7 +167,7 @@ def dompi():
     L = open(sys.argv[3],'r').readlines()
     for l in L:
         if l[0]=='C':
-            key = string.strip(l)
+            key = l.strip()
             ins[key] = []
         else:
             ins[key].append(l[:-1])
@@ -176,8 +178,8 @@ def dompi():
             inf.append('CMPI :::'+l)
             mode = ''
             continue
-        ll = string.strip(l)
-        if l[0:4]=='CMPI' and ins.has_key(ll):
+        ll = l.strip()
+        if l[0:4]=='CMPI' and ins.__contains__(ll):
             inf.append('CMPI >>>')
             for i in ins[ll]:
                 inf.append(i)
@@ -195,10 +197,11 @@ def main():
     global inf, out
 
     ## reading input file into inf buffer
-    f = open(sys.argv[1],'r')
+    f = open(sys.argv[1],'r',encoding='ISO 8859-1')
     s = f.readline()
     while s!='':
-        inf.append(string.rstrip(s))
+        inf.append(s.rstrip())
+        #print(s)
         s = f.readline()
     f.close()
     
@@ -210,7 +213,7 @@ def main():
     ## writing result
     f = open(sys.argv[2],'w')
     for s in inf:
-        print >> f, s
+        f.write(s+'\n')
     f.close()
 
 ## do all
