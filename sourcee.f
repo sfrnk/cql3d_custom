@@ -19,6 +19,7 @@ c..................................................................
       save
       include 'param.h'
       include 'comm.h'
+CMPIINSERT_INCLUDE     
 
 c..................................................................
 c     return if source is not to be recomputed this time step

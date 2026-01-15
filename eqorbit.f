@@ -5,6 +5,7 @@ c
       save
       include 'param.h'
       include 'comm.h'
+CMPIINSERT_INCLUDE
 
       dimension slrz(2),rwork(80),iwork(30)
       !real*8 epsierr(lfield) !Not used
@@ -74,11 +75,15 @@ c     Setup temp storage for non-updown-symm case
       ! and zmag coordinate, see below.
 
       if(epsicon_.le.psilim) then ! YuP[2015/05/03] Just in case:
-         write(*,*)'eqorbit: WARNING: epsicon_.le.psilim'
-         write(*,*)'eqorbit: epsicon_, psilim =', epsicon_, psilim
-         write(*,*)'eqorbit: Resetting epsicon_ to be inside LCFS'
+CMPIINSERT_IF_RANK_EQ_0
+         WRITE(*,*)'eqorbit: WARNING: epsicon_.le.psilim'
+         WRITE(*,*)'eqorbit: epsicon_, psilim =', epsicon_, psilim
+         WRITE(*,*)'eqorbit: Resetting epsicon_ to be inside LCFS'
+CMPIINSERT_ENDIF_RANK
          epsicon_= psilim + 0.001*(psimag-psilim)
-         write(*,*)'eqorbit: epsicon_, psilim =', epsicon_, psilim
+CMPIINSERT_IF_RANK_EQ_0
+         WRITE(*,*)'eqorbit: epsicon_, psilim =', epsicon_, psilim
+CMPIINSERT_ENDIF_RANK
       endif
       
       !Determine f(psi) and df(psi)/dpsi.
@@ -485,8 +490,10 @@ c.......................................................................
             if (bpsi_(l-1).gt.bpsi_(l)) then
                iwarn=iwarn+1
                if (iwarn.eq.1) then 
+CMPIINSERT_IF_RANK_EQ_0
                  WRITE(*,1000),l,rmag,rcon
                  !print*,bpsi_(1:l)
+CMPIINSERT_ENDIF_RANK
                end if
                bpsi_(l)=bpsi_(l-1)+em40 !YuP[2015/05/03] redefine: increasing
  1000 format(//,1x,'eqorbit/WARNING: Non-Monoton B(s)/B(0)',i6,2e17.10)

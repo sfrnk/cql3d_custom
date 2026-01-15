@@ -55,9 +55,9 @@ c..................................................................
 c     PARAMETERS CHOSEN BY USER FOLLOW
 
       character version*64
-      parameter(version="cql3d_git_230113.2")
+      parameter(version="git_cql3d_251215.0") 
       character precursr*64
-      parameter(precursr="cql3d_git_210125.3") !cql3d_git_201207.0, cql3d_git_200101.3
+      parameter(precursr="cql3d_git_230113.4") !cql3d_git_201207.0, cql3d_git_200101.3
       integer machinea
       parameter(machinea=2)
 cBH081218:  Present usage, machinea=2 works with 32- and 64-bit machines
@@ -89,10 +89,11 @@ c     nsoa is the maximum number of sources per species allowed.
 c..................................................................
       integer nsoa
       parameter (nsoa=3)
+      
 c..................................................................
 c     jfla is maximum length of grid for the reduced parallel
 c     distribution function used for the Besedin-Pankratov 
-c     knock-on source. Use odd number.
+c     knock-on source. Use odd number. [Not used anymore]
 c..................................................................
 ccc      parameter (jfla=jxa)    YuP-101216: Not used anymore
 

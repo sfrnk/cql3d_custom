@@ -53,17 +53,21 @@ c191  continue
         CALL PGSLS(1) ! 1-> solid
         CALL PGLINE(nch(l_),RNONCHA1,RNONCHA2)
         
+        CALL PGSCI(4) !blue color
         DO I=1,NCH(L_)
            RNONCHA2(I)=pentr(i,k,9,l_) !Power computed from df/dt. 
         ENDDO                          !Should equal entr(k,4,l_).
         CALL PGSLS(2) ! 2-> dashed
         CALL PGLINE(nch(l_),RNONCHA1,RNONCHA2)
+        CALL PGSCI(1) !restore black color
 
         DO I=1,NCH(L_)
            RNONCHA2(I)=pentr(i,k,3,l_) !RF - radio frequency heating
         ENDDO
+        CALL PGSCI(2) !red color for RF
         CALL PGSLS(3) ! 3-> -.-.- 
         CALL PGLINE(nch(l_),RNONCHA1,RNONCHA2)
+        CALL PGSCI(1) !restore black color
 
         DO I=1,NCH(L_)
            RNONCHA2(I)=pentr(i,k,2,l_) !ohmic - electric field term
@@ -144,10 +148,14 @@ c$$$     1    "los-egy---phenomenological energy loss","$")
         write(t_,210) k ! Gen. species number
         RILIN=RILIN+1.
         CALL PGMTXT('B',RILIN,R40,R40,t_)
+        
+        CALL PGSCI(4) !blue color
         write(t_,211) entr(k,4,l_),entr(k,9,l_) !sum over all components
                                         !and from df/dt (should be same)
         RILIN=RILIN+1.
         CALL PGMTXT('B',RILIN,R40,R40,t_)
+        CALL PGSCI(1) !restore black color
+        
         write(t_,212) entr(k,-1,l_) !collisional transfer from Maxwellian elec.
         RILIN=RILIN+1.
         CALL PGMTXT('B',RILIN,R40,R40,t_)
@@ -160,9 +168,11 @@ c$$$     1    "los-egy---phenomenological energy loss","$")
         write(t_,215) entr(k,2,l_)  !ohmic drive
         RILIN=RILIN+1.
         CALL PGMTXT('B',RILIN,R40,R40,t_)
-        write(t_,216) entr(k,3,l_)  !RF drive
-        RILIN=RILIN+1.
-        CALL PGMTXT('B',RILIN,R40,R40,t_)
+          CALL PGSCI(2) !red color
+          write(t_,216) entr(k,3,l_)  !RF drive
+          RILIN=RILIN+1.
+          CALL PGMTXT('B',RILIN,R40,R40,t_)
+          CALL PGSCI(1) !restore black color
         write(t_,217) entr(k,5,l_)  !particle sources
         RILIN=RILIN+1.
         CALL PGMTXT('B',RILIN,R40,R40,t_)
@@ -192,12 +202,12 @@ c$$$     1    "los-egy---phenomenological energy loss","$")
         
  210    format("Species k=",i2, "    Final powers in Watts/cc are:")
  211    format("sum over all comp=",1pe10.2, 3x,
-     +         "From df/dt :",1pe10.2)
+     +         "From df/dt(--)",1pe10.2)
  212    format("collisional transfer from Maxwellian elec.=",1pe10.2)
  213    format("collisional transfer from Maxwellian ions=",1pe10.2)
  214    format("collisional transfer from gens.=",1pe10.2)
  215    format("ohmic drive=",1pe10.2)
- 216    format("RF drive=",1pe10.2)
+ 216    format("RF drive (-.-) =",1pe10.2)
  217    format("particle sources=",1pe10.2)
  218    format("loss-lossmode(k)=", 1pe10.2, 3x,
      +         "losses-torloss(k)=",1pe10.2)

@@ -8,6 +8,39 @@ c     This file documents changes in the code
 c
 c***********************************************************************
 
+c[361] Fixed an issue related to kfrsou.
+  For each beam 'ib' there should be an associated species 'k',
+  set with values of kfrsou(ib) in cqlinput.
+  In old version of CQL3D the namelist variable kfrsou was a scalar,
+  and its value was applied for all beams.
+  Now kfrsou() is a vector, 
+  and default values are set to kfrsou(:)=0.
+  Therefore, old cqlinput where several beams are used 
+  and kfrsou (as a scalar) is set to 2 
+  (which means - 1st and 2nd beams are pointing to species k=2)
+  would fail now.
+  The issue is fixed by resetting kfrsou(ib)=0
+  to kfrsou(ib)=kfrsou(ib-1) [value of 'k' from previous beam].
+  See frinitz.f, around "[2025-12-16]" 
+
+------------------------------
+version="git_cql3d_251215.0"
+------------------------------
+
+c[360] Few adjustments, most important is related to cases 
+  when impurity species is added (to get the specified Zeff).
+  Maxwellian electrons are moved by one index;
+  it was done for central/edge values but not for powers 
+  in parabolic profiles. Added: 
+     !YuP[2025-12-12] Also need to move up powers npwr and mpwr:
+     mpwr(kelecm)=mpwr(kelecm-1) !For T_e_maxw
+     npwr(kelecm)=npwr(kelecm-1) !For T_e_maxw
+  Track changes by "[2025-12-12]"
+
+------------------------------
+version="git_cql3d_230113.4"
+------------------------------
+
 c[359] Corrected plot for E(rho) field at selected time steps -
  the integration step and the time frame for this step are
  properly identified and printed. The E field is set at the beginning

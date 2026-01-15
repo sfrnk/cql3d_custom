@@ -113,7 +113,7 @@ c      pi=3.141592653589793d0
       f4d_out="disabled"
       f3d_out="disabled"
       f3d_format="ascii"
-      gamaset=0.
+      gamaset=0.d0
       gamafac="disabled"
       !--------------------------------------------------------------
       !YuP[2019-07-31]-[2019-09] Added new namelist var:

@@ -35,7 +35,7 @@ c..................................................................
  550    format(1x,"Species ",i2," Distribution Function Contour Plot")
         CALL PGPAGE
         itype=1 ! means: plots are made for distr.func f
-        call pltcont(k,2,t_,itype) ! for f()
+        call pltcont(k,1,t_,itype) !for f()  pltcase=1 means log10 scale
         write(t_,560)
  560    format("Contour values:")
         RILIN=10.

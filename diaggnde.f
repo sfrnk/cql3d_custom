@@ -31,8 +31,8 @@ c     tam4 related to parallel energy calc
 c     tam5 reltaed to perpendicular energy calc
 c..................................................................
 
-      currmt(l_)=0.
-      currmtp(l_)=0.
+      currmt(l_)=0.d0
+      currmtp(l_)=0.d0
 
 c     For cqlpmod.ne."enabled", default lmdpln_ will take on values
 c       lrz:1 and successive calls (for given time step).  l_ also
@@ -43,10 +43,10 @@ c       whereas l_ varies lrors:1, representing distance along B-field.
 c       Only a single flux surface is examined, lrz=1, and lr_ is a
 c       chosen integer.
       if (l_ .eq. lmdpln_) then
-        currt(lr_)=0.
-        currtp(lr_)=0.
-        curtor(lr_)=0.
-        curpol(lr_)=0.
+        currt(lr_)=0.d0
+        currtp(lr_)=0.d0
+        curtor(lr_)=0.d0
+        curpol(lr_)=0.d0
       endif
       do 90 k=1,ngen
         call bcast(tam1,zero,jx)
@@ -84,8 +84,8 @@ cBH080502  Error:  only need one vptb= abs(coss)*tau factor
 
 c     write(*,*) 'diaggnde:l_,(tau(i,lr_),i=1,iy)', l_,(tau(i,lr_),i=1,iy)
 
-        denra(k,l_)=0.
-        curra(k,l_)=0.
+        denra(k,l_)=0.d0
+        curra(k,l_)=0.d0
 c-----------------------------
 c   denra is the flux surface average runaway density.
 c   curra is the flux surface area average parallel runaway current 
@@ -94,18 +94,18 @@ c   fdenra is fraction of density that is runaway.
 c   fcurra is fraction of current due to runaway.
 c-----------------------------
 c
-        gn=0.
-        en=0.
-        hn=0.
-        sn=0.
-        cn=0.
-        wpar_=0.
-        wperp_=0.
+        gn=0.d0
+        en=0.d0
+        hn=0.d0
+        sn=0.d0
+        cn=0.d0
+        wpar_=0.d0
+        wperp_=0.d0
 
         do 40 j=1,jx
 
 c..................................................................
-c     midplane density
+c     gn= midplane density
 c..................................................................
 
           gn=gn+tam1(j)*cint2(j) !== n0 midplane density 
@@ -115,7 +115,7 @@ c..................................................................
           !subroutine. 
 
 c..................................................................
-c     miplane current density
+c     midplane current density 
 c     currv is integrand in velocity integral for parallel current,
 c       at the midplane.
 c     currvs contains partial sums of the currv, up to velocity x.
@@ -136,7 +136,8 @@ c     Re eqsym: tam2 has tau factor, to be divided below by zmaxpsi.
 c     tau is v*tau_B, and it's over 1/2 orbit if eqsym.ne.none
 c..................................................................
 
-          hn=hn+tam2(j)*cint2(j) !actually 1/2 line-density if eqsym.ne.none
+         !Field-line density:
+         hn=hn+tam2(j)*cint2(j) !actually 1/2 line-density if eqsym.ne.none
 
 c..................................................................
 c     Flux surface averaged energy (per particle)
@@ -178,13 +179,15 @@ c     If density computed is negative call exit
 c     Energies are in Kev or Kev/cm**3 (after multiplication by
 c     fions)
 c..................................................................
-        if ((gn.le.0.d0).or.(hn.le.0.d0) )  then
-          WRITE(*,'(a,2i4,1p2e10.2)')'diaggnde: k,l_, gn,sum(f)=',
-     &      k,l_,gn,sum(f(:,:,k,l_)) 
-          call diagwrng(10) !-> STOPS (at each mpirank where gn=0 happens)
+        if ((gn.le.0.d0).or.(hn.eq.0.d0)) then
+CMPIINSERT_IF_RANK_EQ_0
+          WRITE(*,*)'diaggnde: k,lr_,gn,hn,sum(f)=', k,lr_,gn,hn,
+     &     sum(f(1:iy,1:jx,k,lr_))
+CMPIINSERT_ENDIF_RANK
+          call diagwrng(10) !stops at all cores
         endif
         fdenra(k,l_)=denra(k,l_)/hn
-        fcurra(k,l_)=curra(k,l_)/cn
+        if(cn.ne.0.d0) fcurra(k,l_)=curra(k,l_)/cn
         energym(k,l_)=en/gn*fions(k)  ! at midplane
         enrgypa(k,ls_)=en/gn*fions(k) ! at midplane
         if (l_ .eq. lmdpln_) then
@@ -221,9 +224,9 @@ c..................................................................
 c%OS  
 c          print *,'diaggnde:  l_= ',l_,'  gn,hn= ',gn,hn
 c%OS  
-          gni=1./gn
-          hni=0.0
-          if (l_ .eq. lmdpln_) hni=1./hn
+          gni=1.d0/gn
+          hni=0.d0
+          if (l_ .eq. lmdpln_) hni=1.d0/hn
           if (l_ .eq. lmdpln_) hnis(k,lr_)=hni
 
 c..................................................................
@@ -244,9 +247,9 @@ CMPIINSERT_IF_RANK_EQ_0
              !in case of CQLP
           else
             !WRITE(*,*)'----------------------- lr_===', lr_
-            WRITE(*,'(a,i4,3e12.4)')
-     +      'diaggnde_n=0 lr_, reden, gn, sum_ij(gone)',
-     +                   lr_,reden(k,lr_),gn,sum(gone(:,1:jx,k,lr_))
+            WRITE(*,'(a,2i4,3e12.4)')
+     +      'diaggnde_n=0 k,lr_, reden, gn, sum_ij(gone)',
+     +                    k,lr_,reden(k,lr_),gn,sum(gone(:,1:jx,k,lr_))
           endif
           endif
 CMPIINSERT_ENDIF_RANK
@@ -255,7 +258,8 @@ CMPIINSERT_ENDIF_RANK
      +         .or. (fpld(1,1).eq.-1.0)) then
              continue
           else
-             call dscal(iyjx2,zfact,f(0,0,k,l_),1)
+             call dscal(iyjx2,zfact,f(0,0,k,l_),1) 
+             !where zfact=hni*zmaxpsi(lr_)*reden(k,lr_)
           endif
 c          write(*,*)'diaggnde: k,lr_,zfact,reden(k,lr_)=',
 c     +                         k,lr_,zfact,reden(k,lr_)
@@ -448,7 +452,7 @@ c     bdre(lr_) - ions only;   bdrep(lr_) - ions and electrons (kelecg.ne.
 c     sorpwt(lr_) is the total source power (RF+NBI for urf and fr module
 c..................................................................
 
-        sorpwt(lr_)=0.
+        sorpwt(lr_)=0.d0
         do 85 kk=1,ngen
           sorpwt(lr_)=sorpwt(lr_)+sorpw_rf(kk,lr_)+sorpw_nbi(kk,lr_) !-YuP
  85     continue
@@ -462,9 +466,9 @@ c..................................................................
           areaovol=darea(lr_)/dvol(lr_)
         else
           if (eqmod.eq."enabled") then
-            areaovol=1./twopi*onovrp(1,lr_)
+            areaovol=1.d0/twopi*onovrp(1,lr_)
           else
-            areaovol=1./twopi/radmaj
+            areaovol=1.d0/twopi/radmaj
           endif
         endif
 
@@ -474,11 +478,11 @@ c..................................................................
 
         if (n.gt.0) then
           if (sorpwt(lr_).ge.1.e-25) then
-            bdre(lr_)=areaovol*currt(lr_)/(sorpwt(lr_)*3.e+9)
-            bdrep(lr_)=areaovol*currtp(lr_)/(sorpwt(lr_)*3.e+9)
+            bdre(lr_)=areaovol*currt(lr_)/(sorpwt(lr_)*3.e9)
+            bdrep(lr_)=areaovol*currtp(lr_)/(sorpwt(lr_)*3.e9)
           else
-            bdre(lr_)=0.
-            bdrep(lr_)=0.
+            bdre(lr_)=0.d0
+            bdrep(lr_)=0.d0
           endif
         endif
 
@@ -486,15 +490,15 @@ c.......................................................................
 c     Compute Z-effective
 c.......................................................................
       if(cqlpmod.ne."enabled")then !YuP[2021-02]
-       zeff(lr_)=0. !Notice: full grid here, same as for reden()
+       zeff(lr_)=0.d0 !Notice: full grid here, same as for reden()
        zeff4(lr_)=0.d0 !Yup[2014-05-27] Initialize to 0.
       else ! (cqlpmod.eq."enabled")
-       zeff(ls_)=0. !Notice: full grid here, same as for denpar()
+       zeff(ls_)=0.d0 !Notice: full grid here, same as for denpar()
        zeff4(ls_)=0.d0 
       endif 
-      zeff1=0.
-      xq=0.
-      if (izeff.eq."backgrnd") then
+      zeff1=0.d0
+      xq=0.d0
+      if (izeff.eq."backgrnd") then ! based on all ions (gen+maxw)
         do 80 k=1,ntotal
            if (k.eq.kelecg .or. k.eq.kelecm) goto 80
            xq=xq+1
@@ -524,8 +528,8 @@ c.......................................................................
           enddo ! kstate
         endif ! nstates.gt.0
         
-      elseif (izeff.eq."ion") then
-         do kk=1,nionm
+      elseif (izeff.eq."ion") then ! based on maxw. ions only
+         do kk=1,nionm ![2025-10] If no Maxw.ions then zeff-->0
             k=kionm(kk)
             xq=xq+1
             if(cqlpmod.ne."enabled")then !YuP[2021-02]
@@ -538,9 +542,17 @@ c.......................................................................
              zeff1=zeff1+bnumb(k)*denpar(k,ls_)
             endif
          enddo
+         if(zeff1.eq.0.d0)then ![2025-10] If no Maxw.ions then zeff=0
+CMPIINSERT_IF_RANK_EQ_0
+           WRITE(*,'(a,2i4,1pe12.4)')
+     +     'diaggnde: n,lr,zeff1=', n, l_, zeff1
+CMPIINSERT_ENDIF_RANK
+           STOP 'Check/change izeff. Possibly no Maxw.ions'
+         endif
          
       else
-         stop 'diaggnde: Problem with izeff specification'
+         WRITE(*,*) 'Wrong izeff specification; izeff=',izeff
+         stop
       endif
       
       if(cqlpmod.ne."enabled")then !YuP[2021-02]
@@ -550,6 +562,11 @@ c.......................................................................
        zeff4(ls_)=zeff4(ls_)/xq
        zeff(ls_)=zeff(ls_)/zeff1
       endif
+
+CMPIINSERT_IF_RANK_EQ_0
+      WRITE(*,'(a,2i4,1pe12.4)')
+     +     'diaggnde: n,lr,zeff(lr)=', n, l_, zeff(lr_)
+CMPIINSERT_ENDIF_RANK
 
 c.......................................................................
 c     end of strictly radial dependent variables
@@ -581,29 +598,34 @@ c     Compute J/P which includes ion and electron currents
 c..................................................................
 
       if (sorpwt(lr_).ge.1.e-25) then
-        bdrep(lr_)=areaovol*currtp(lr_)/(sorpwt(lr_)*3.e+9)
+        bdrep(lr_)=areaovol*currtp(lr_)/(sorpwt(lr_)*3.e9)
       else
-        bdrep(lr_)=0.
+        bdrep(lr_)=0.d0
       endif
 
 c..................................................................
 c     Redefine electron density to maintain quasineutrality.
 c..................................................................
 
-      s=0.
-      if (kelecm.eq.0 .or. kelecg.ne.0) goto 72
+      s=0.d0
+      if (kelecm.eq.0 .or. kelecg.ne.0) goto 72 ! skip "redefine"
+         !No Maxwellian electrons -> skip,
+         !electrons are general species -> skip
+         ![YuP: however, what if we have D_general+e_general,
+         ! and colmodl=3, which means e_maxwell is present ?]
       if (qsineut .ne. "disabled") then
-        if (qsineut.eq."maxwel") goto 71
+        if (qsineut.eq."maxwel") goto 71 !Use Maxw.ions only.
+        !For  qsineut.eq."enabled"  use ALL ions, including general ions
         do 74 k=1,ngen
           s=s+xlndn(k,lr_)*zmaxpsii(lr_)*bnumb(k)
  74     continue
- 71     do 70 k=ngen+1,ntotal
-          if (k.eq.kelecm) goto 70
+ 71     do 70 k=ngen+1,ntotal !Maxw.ions only
+          if (k.eq.kelecm) goto 70 !Skip e_maxw
           s=s+reden(k,lr_)*bnumb(k)
  70     continue
         reden(kelecm,lr_)=s
-        locquas="disabled"
-      endif
+        locquas="disabled" ! To avoid certain steps in subr.diagdenz
+      endif ! qsineut.ne."disabled"
  72   continue
 
 c..................................................................
@@ -611,7 +633,7 @@ c     determine density as a function of poloidal angle.
 c..................................................................
       call diagdenz
 
- 99   continue
+ 99   continue ! if (l_ .ne. lmdpln_)  handle
 c
 c     Save copy of pitch angle integrated f in tem5
 c

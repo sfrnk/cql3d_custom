@@ -22,7 +22,8 @@ c.................................................................
       call bcast(sincosba(1,1,lr_),zero,iymax*ngen)
 
       lrange=lz
-      if (numclas .eq. 1) lrange=lz/2+1 !!! YuP: needs to check ?
+      if (cqlpmod.eq."enabled" .and. numclas .eq. 1) lrange=lz/2+1 !!! YuP: needs to check ?
+      !YuP[2025-12-12] added cqlpmod.eq."enabled" in the above line
 
       !This subr. is only called when if l_=lmdpln_
       !For CQLP, l_=lmdpln_=1

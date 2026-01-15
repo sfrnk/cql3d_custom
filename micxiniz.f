@@ -428,7 +428,7 @@ c.......................................................................
 
       ! Here: we are still dealing with CQLP, to the end of subroutine.
       !Note: if transp=enabled then ls=lsmax
-      if (sbdry.ne."periodic" .and. numclas.ne.1) then
+      if (sbdry.ne."periodic" .and. numclas.ne.1) then !CQLP here
         do 400 ik=1,ntotal
           do 401 il=0,lsmax+1,lsmax+1
             denpar(ik,il)=0.0

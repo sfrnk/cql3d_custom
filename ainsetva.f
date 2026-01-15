@@ -343,7 +343,7 @@ c     Check number of ion Maxwl species with different bnumb.
            if (abs(bnumb(kionm(k))/bnumb(kionm(1))-1.).gt.0.01) 
      +          ndif_bnumb=ndif_bnumb+1
         enddo
-           
+          
 
 
         if (ndif_bnumb.eq.1) then
@@ -366,6 +366,9 @@ c         add a species
  60         continue
             temp(kelecm,0)=temp(kelecm-1,0)
             temp(kelecm,1)=temp(kelecm-1,1)
+            !YuP[2025-12-12] Also need to move up powers npwr and mpwr:
+            mpwr(kelecm)=mpwr(kelecm-1) !For T_e_maxw
+            npwr(kelecm)=npwr(kelecm-1) !For T_e_maxw
             if (nbctime.ne.0) then
                do jtm=1,nbctime
                   redenc(jtm,kelecm)=redenc(jtm,kelecm-1)
@@ -812,12 +815,13 @@ c.......................................................................
         !Probably CQLP settings should be adjusted,
         !to have iy/2 > ls-1 ?  Not sure...
       endif
-      
+
+      numclas=0 !For CQL3D, just in case (numclas should not be used)
       if (cqlpmod.eq."enabled") then
         if (lsmax .ge. 5) lz=lsmax ! Here: CQLP
-        numclas=nummods/10
+        numclas=nummods/10 ! Here: CQLP
         numindx=mod(mod(nummods,10),5)
-        if (numclas.eq.1 .and. transp.eq."enabled") then
+        if (numclas.eq.1 .and. transp.eq."enabled") then ! Here: CQLP
           if (updown .ne. "symmetry") call wpwrng(7)
           if (sbdry .ne. "periodic") call wpwrng(8)
           !For numclas.eq.1  ==> Be sure that ls is even:

@@ -1,6 +1,6 @@
 c
 c
-      subroutine baviorbt
+      subroutine baviorbt !for taunew.eq."enabled"
       implicit integer (i-n), real*8 (a-h,o-z)
       save
  
@@ -90,9 +90,10 @@ c     the flux surface.
 c     If eqsym.eq."none", then lower in second section done below.
 c...................................................................
 
-      if (eqsym.ne."none") then
+      if (eqsym.ne."none") then !up-down symmetry
          ilzhfs=lz
-         if (numclas .eq. 1) ilzhfs=lz/2+1
+         if (cqlpmod.eq."enabled" .and. numclas .eq. 1) ilzhfs=lz/2+1
+      !YuP[2025-12-12] added cqlpmod.eq."enabled" in the above line
       else  !  i.e., non-up-down symmetric case
          ilzhfs=lz_bmax(lr_) ! index in pol.mesh corresponding to Bmax
       endif
@@ -554,7 +555,8 @@ c     Begin loop over the particle orbit
 c...................................................................
 
       ilzhfs=lz
-      if (numclas .eq. 1) ilzhfs=lz/2+1
+      if (cqlpmod.eq."enabled" .and. numclas .eq. 1) ilzhfs=lz/2+1
+      !YuP[2025-12-12] added cqlpmod.eq."enabled" in the above line     
       !write(*,*)'baviorbto: ilzhfs',ilzhfs
       do 70 l=1,ilzhfs-1
          if(cqlpmod.ne."enabled")then !YuP[2021-03-09] added
@@ -713,7 +715,7 @@ CDIR$ IVDEP
         ! Equivalent points (same R, but opposite Z):
         ! 2 and 40, 3 and 39, ..., 20 and 22
         ! In general, l and (ls-l+2)
-        if (numclas .eq. 1)then !in this case ilzhfs=lz/2+1
+        if (numclas .eq. 1)then !in this case ilzhfs=lz/2+1 !CQLP here
         do l=2,ilzhfs-1
            l1= lz-l+2 ! Corresponds to other hemi-circle
            do i=1,iy_(l1) 

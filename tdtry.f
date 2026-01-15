@@ -21,7 +21,8 @@ c.......................................................................
       else
          ilzhfs=lz
       endif
-      if (numclas .eq. 1) ilzhfs=lz/2+1
+      if (cqlpmod.eq."enabled" .and. numclas .eq. 1) ilzhfs=lz/2+1
+      !YuP[2025-12-12] added cqlpmod.eq."enabled" in the above line     
 
       !if (ioutput(1).ge.2) then !YuP[2020] diagnostic printout
       !write(*,*)'tdtry:  ipacktp =',ipacktp

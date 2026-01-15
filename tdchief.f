@@ -160,7 +160,7 @@ c     if at beginning of a beam pulse, and have time-dep background.
 c     Set ibeampon= beam pulse on-indicator (used in coefstup)
 c         ibeamponp= indicates freya calc carried out for given pulse.
 c.......................................................................
-
+      if (frmodp.eq."enabled") then !YuP[2025-12-12] added if
 !YuP[2022-11-17]      if ((n+1).eq.nonvphi .or. (n+1).eq.noffvphi) then
       if ((n+1).ge.nonvphi .and. (n+1).lt.noffvphi) then
         !Update NBI deposition (==> update ion source)
@@ -170,6 +170,7 @@ CMPIINSERT_ENDIF_RANK
         call frnfreya(frmodp,fr_gyrop,beamplsep,beamponp,beampoffp,
      .                nbeamsp,hibrzp,mfm1p,noplots,kfrsou,src_nbi_ep)
       endif
+      endif !(frmodp.eq."enabled") !YuP[2025-12-12] added if
       
 
 cBH171014: Could make this function of beam number.

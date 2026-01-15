@@ -37,12 +37,18 @@ c..................................................................
           if (n .lt. nonso(k,m) .or. n .gt. noffso(k,m)) go to 800
           call bcast(temp2(0,0),zero,iyjx2)
           do 700 l=l_start,l_end  !was 1,lz
+
+            if (cqlpmod.eq."enabled") then !YuP[2025-09-01] added
+              iiy=iy_(l) !CQLP: iy_ at given poloidal index;
+            else !CQL3D
+              iiy=iy_(l_) !CQL3D: at given radial index
+            endif
           
             if(cqlpmod.ne."enabled")then !YuP[2022-02-10] CQL3D/CQLP distinction
               !--CQL3D
               !Determine the local source at z(l,lr_) in preparation for bounce-av
               do i=1,imax(l,lr_)
-              ii=iy_(l)+1-i !YuP[2021-03-11] iy-->iy_(l) [Here: in l-loop]
+              ii=iiy+1-i !YuP[2021-03-11]CQL3D iy-->iy_(l_)
               call soup(cosz(i,l,lr_),l,k,m)  !theta_loc<pi/2
               do j=1,jx
                 temp1(i,j)=soupp(j,lr_)
@@ -54,7 +60,7 @@ c..................................................................
               enddo ! i 
               !Do the bounce average of the source..
               do i=1,imax(l,lr_)
-              ii=iy_(l)+1-i ! !YuP[2021-03-11] iy-->iy_(l) [Here: in l-loop]
+              ii=iiy+1-i ! !YuP[2021-03-11] iy-->iy_(l_) [Here: in l-loop]
               ax=dtau(i,l,lr_)/tau(i,lr_)
               if ((l.ne.lz .and. lmax(i,lr_).eq.l)) then
                 ax=ax+dtau(i,l+1,lr_)/tau(i,lr_)
@@ -67,7 +73,7 @@ c..................................................................
             
             else !CQLP:  no bounce-averaging
             
-              do i=1,iy_(l)
+              do i=1,iiy
                 call soup(cosz(i,l,lr_),l,k,m)  !all theta_loc =[0:pi]
                 do j=1,jx
                   temp2(i,j)=soupp(j,lr_)
@@ -87,13 +93,13 @@ c..................................................................
           temp2frac=1.d-8
           temp2max=zero
           do j=1,jx
-             do i=1,iy_(l_) !!YuP[2021-03-11] iy-->iy_(l_)
+             do i=1,iymax !!YuP[2021-03-11] iy-->iy_(l_)
                 temp2max=max(temp2max,temp2(i,j))
              enddo
           enddo
           temp2frac=temp2frac*temp2max
           do j=1,jx
-             do i=1,iy_(l_) !!YuP[2021-03-11] iy-->iy_(l_)
+             do i=1,iymax !!YuP[2021-03-11] iy-->iy_(l_)
                 if (temp2(i,j).lt.temp2frac) temp2(i,j)=zero
              enddo
           enddo
@@ -104,7 +110,7 @@ c     Compute the density in preparation for scaling to achieve
 c     the desired current.
 c..................................................................
           s1=0.d0
-          do 300 i=1,iy_(l_) !!YuP[2021-03-11] iy-->iymax or iy_(l_)
+          do 300 i=1,iymax !!YuP[2021-03-11] iy-->iymax or iy_(l_)
             do 250 j=1,jx
               s1=s1+temp2(i,j)*cynt2(i,l_)*cint2(j)*vptb(i,lr_)
               !Note: vptb(:,:)=1.d0 for CQLP runs
@@ -124,7 +130,7 @@ c..................................................................
 
           call dscal(iyjx2,q1,temp2(0,0),1)
           do 200 j=1,jx
-          do 150 i=1,iy_(l_) !!YuP[2021-03-11] iy-->iymax or iy_(l_)
+          do 150 i=1,iymax !!YuP[2021-03-11] iy-->iymax or iy_(l_)
            !source(i,j,k,indxlr_)=source(i,j,k,indxlr_)+temp2(i,j) !before[2022-02-11]
             source(i,j,k,l_)=source(i,j,k,l_)+temp2(i,j) !after[2022-02-11]
  150      continue

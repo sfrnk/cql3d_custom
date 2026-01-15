@@ -23,7 +23,8 @@ c..................................................................
       dm=-(cos(sm)/coss(itl,l_)-1.)
 
       ilzhfs=lz
-      if (numclas .eq. 1) ilzhfs=lz/2+1
+      if (cqlpmod.eq."enabled" .and. numclas .eq. 1) ilzhfs=lz/2+1
+      !YuP[2025-12-12] added cqlpmod.eq."enabled" in the above line     
 
 c..................................................................
 c     For standard circular cross section model..

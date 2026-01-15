@@ -572,30 +572,20 @@ c     Call the neutral beam source module
 c..................................................................
 
 cBH171014:  Enable calls for multiple beam species.
-
-CMPIINSERT_IF_RANK_EQ_0      
-      WRITE(*,*)'tdinitl:call frnfreya, n=',n,'time=',timet
-CMPIINSERT_ENDIF_RANK
       ! nbeams,nbeamsp= 0,0   here
       call frnfreya(frmodp,fr_gyrop,beamplsep,beamponp,beampoffp,
      &              nbeamsp,hibrzp,mfm1p,noplots,kfrsou,src_nbi_ep)
       !nbeamsp is one of outputs: got value from nbeams (cqlinput variable)
       !Now nbeamsp is saved into comm.h
+      if (frmodp.eq."enabled") then !YuP[2025-12-12] added if
+      !Note: frmodp is set in frnfreya(frmodp,....)
 CMPIINSERT_IF_RANK_EQ_0      
       WRITE(*,*)'tdinitl/aft.frnfreya: mfm1, nbeamsp,src_nbi_ep=',
      &  mfm1p,nbeamsp,src_nbi_ep
       WRITE(*,*)'tdinitl/aft.frnfreya: kfrsou(1:nbeamsp)=',
      & kfrsou(1:nbeamsp)
 CMPIINSERT_ENDIF_RANK
-
-c       write(*,*) 'hibrzp(i,1,1),hibrzp(i,2,1),hibrzp(i,3,1)'
-c       do i=1,mfm1p
-c         write(*,'(i4,2x,0p9f9.4)') i, hibrzp(i,1,1),
-c     >        hibrzp(i,2,1),hibrzp(i,3,1),
-c     >        hibrzp(i,1,2),hibrzp(i,2,2),hibrzp(i,3,2),
-c     >        hibrzp(i,1,3),hibrzp(i,2,3),hibrzp(i,3,3)
-c       enddo
-c      stop
+      endif !(frmodp.eq."enabled") !YuP[2025-12-12] added if
 c
 c     Initialize ibeampon/ibeamponp (present and previous time step)
       if (frmodp.eq."enabled") then

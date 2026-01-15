@@ -12,24 +12,77 @@
 #          by Yuri Petrov.
 #          Please follow this procedure in future cql3d modifications.
 
-#Need first to enter:
-# module load netcdf
-# or put the comment in your startup scripts
-# e.g., in .bashrc.ext at NERSC
+#Make sure have intel environment (Intel is default on Cori):
+#module list
+#Else switch environment:
+#For example: module swap PrgEnv-xxx PrgEnv-intel
+
+#make sure have netcdf libraries and includes:
+#module unload darshan; module load cray-netcdf; module load cray-hdf5
+
+#YuP[April 2017] It is strongly advised to add into your .bashrc.ext script:
+#   export FORT_BUFFERED=1
+# or into your .cshrc.ext script:
+#   setenv FORT_BUFFERED 1
+# It was the default option for NERSC in 2016,
+# but it was disabled by NERSC personnel in 2017
+# because of problems with some newer compilers.
+# As a result of this change, the MPI runs became slower by ~3x
+# when there is I/O of data into one file from all cores.
+ 
+#Works on Perlmutter YuP[2023], mpilib.f is not needed anymore
+
+# Per 2020-01-16 - Johannes Blaschke (NERSC):  -----------------------------------
+# 1. Add `-lX11` to the LIBS variable (Note that the LIBRARIES variable is no longer
+# used. Instead the make file uses LIBS). So LIBS should read:
+# ```
+# LIBS = $(LOCATION) -lpgplot -lX11
+# ```
+# (note the `-lnetcdf` `-lnetcdff` flags are
+# also no longer needed, cf. point 2 below)
+# 2. You should rely on the compiler wrappers to find all loaded module libraries
+# (such as NetCDF). So you don't need to manually include `$(NETCDF_DIR)` and
+# `-lnetcdf`, etc. The compiler wrapper already does that if the `cray-netcdf` module
+# has been loaded. You can find out what the compiler wrapper already contains by
+# running `cc -v` or `ftn -v`.
+# 3. The location of your `pgplot` library now needs to be included in `LOCATION`.
+# ```
+# LOCATION= -L/global/cfs/cdirs/m77/pgplot.perl.intel
+# (or whatever the path is)
+# ```
+# Also add into your cori_batchscript_mpi  file, just before srun line:
+#  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/global/cfs/cdirs/m77/pgplot.perl.intel
+# --------------------------------------------------------
+# YuP/perNERSCconsulters: Need to use -L/usr/lib64 just before -lX11
+# Also add into your cori_batchscript_mpi  file, just before srun line:
+#  export LD_LIBRARY_PATH=/usr/lib64:$LD_LIBRARY_PATH
+#  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/global/cfs/cdirs/m77/pgplot.perl.intel 
+#----------------  On this subject (from NERSC consulters; 2020-02-05):
+# ... the "-fast" flag is the cause for the final link stage to need -L/usr/lib64 before
+#  -lX11.
+# And without -fast, the -L/usr/lib64 is not needed. 
+# And this "-fast" is also related to  ipo warning messages. 
+# "-fast" includes an option to do ipo (interprocedural optimization), and it fails
+# to find some X11 libraries in /usr/lib64, which by default the compiler should know
+# about this path. I think it is kind of an Intel compiler bug with "-fast". 
+# Recommended: use "-O3" instead of "-fast" to avoid the "-ipo" included in the
+#  "-fast" option.
+#-----------------------------------------------------------------------------------
 
 SHELL     = /bin/sh
-NAME      = cql3d_pathscale_mpi
-COMPILER=	pathf95
+NAME      = xcql3d_mpi_intel.perl
+COMPILER=   ftn
 BUILDER=	$(COMPILER)
-INCLUDES  = advnce.h comm.h frcomm.h frname.h frname_decl.h name.h  \
-	param.h trans.h wpadvnc.h name_decl.h
+INCLUDES  = advnce.h comm.h frcomm.h frname.h frname_decl.h name.h name_decl.h \
+	param.h trans.h wpadvnc.h \
+         mpilib.h
 SOURCES  = a_cqlp.f  abchief.f  achief1.f  achiefn.f  aclear.f  ainalloc.f  \
 	aindflt.f  aindflt1.f aindfpa.f  aingeom.f  ainitial.f   \
 	ainpla.f  ainplt.f  ainpltpa.f   \
 	ainsetpa.f  ainsetva.f  ainspec.f  ainvnorm.f  \
-	aminmx.f bavdens.f  bavgmax.f  baviorbt.f   \
+	aminmx.f ampfar.f bavdens.f  bavgmax.f  baviorbt.f   \
 	bcast.f  bsl.f  bsu.f  cfpcoefc.f  cfpcoefn.f  \
-        cfpcoefr.f  cfpgamma.f  cfpleg.f     \
+	cfpcoefr.f  cfpgamma.f  cfpleg.f     \
 	cfpmodbe.f  cfpsymt.f  coefefad.f  coefefld.f  coefegad.f  \
 	coeffpad.f  coefload.f  coefmidt.f  coefmidv.f   \
 	coefrfad.f  coefstup.f  coefsyad.f  coefwti.f  \
@@ -43,11 +96,11 @@ SOURCES  = a_cqlp.f  abchief.f  achief1.f  achiefn.f  aclear.f  ainalloc.f  \
 	eqorbit.f  eqrhopsi.f  eqrhs.f   \
 	eqtopeol.f  equilib.f  eqvolpsi.f  eqwrng.f  \
 	esefld.f  exlin.f  exsweep.f  exsweept.f   \
-	exsweepx.f  finit.f  firstdrv.f  fle.f flxfn.f fow_orbits.f  \
+	exsweepx.f  finit.f  firstdrv.f  fle.f flxfn.f  \
 	freya.f  freyasou.f  frhexdrv.f   \
 	frinitl.f  frinitz.f  frnbdep2.f  frnfreya.f  \
 	frplteq.f  frset.f frsmooth.f  frsplft.f   \
-	frstup.f  frsubs.f  frsuppor.f  frwrong.f  hpalloc0.f  \
+	frstup.f  frsubs.f  frsuppor.f  frwrong.f  \
 	ilut.f impavnc0.f  impchk.f  impnorm.f  it3dalloc.f  \
 	lookup.f  losscone.f  lossegy.f  lossorbm.f  \
 	losstor.f  micfrplt.f  micgetr.f   \
@@ -62,7 +115,7 @@ SOURCES  = a_cqlp.f  abchief.f  achief1.f  achiefn.f  aclear.f  ainalloc.f  \
 	prpprctr.f  psif.f  psifp.f  psifppy.f  psifpy.f  psiinv.f  \
 	r8lsode.f  r8subs.f  rdc_multi.f rdc_bplt.f restcon.f resthks.f  \
 	restvty.f  rf.f  sigalloc.f  siggy.f  sigmax.f  sigsetup.f  \
-        sigv5d.f sigfn.f      sigie.f  sigmaxwl.f   sigv.f  \
+	sigv5d.f sigfn.f      sigie.f  sigmaxwl.f   sigv.f  \
 	soucrit.f sounorm.f  soup.f  soup0.f  souplt.f   \
 	sourc0.f  sourcee.f  sourcef.f  sourceko.f sourcpwr.f   \
 	synchrad.f  tdbootst.f tdboothi.f  tdchief.f  tddiag.f  \
@@ -89,27 +142,36 @@ SOURCES  = a_cqlp.f  abchief.f  achief1.f  achiefn.f  aclear.f  ainalloc.f  \
 	urfpack.f  urfpackm.f  urfrays.f  urfread.f   \
 	urfread_.f  urfsetup.f  urfwrite.f  urfwrite_.f  \
 	urfwrong.f  urfwr0.f  urfwr0c.f \
-        vlf.f vlfalloc.f vlfbplt.f vlfsetup.f vlh.f  vlhbplt.f vlhd.f  \
+	vlf.f vlfalloc.f vlfbplt.f vlfsetup.f vlh.f  vlhbplt.f vlhd.f  \
 	wpalloc.f  wparsou.f  wpavg.f  wpbdry.f  \
 	wpcheck.f  wpchgdy.f wpcthta.f  wpelecf.f   \
 	wpinitl.f  wploweq.f  wpsavf.f  wptrafx.f  wptramu.f  \
 	wptrmuy.f  wpvptb.f  wpwrng.f  wpmshchk.f \
-	zblock.f  zcunix.f  zfreya.f    znonsym.f \
-        mpilib.f
+	zblock.f  zcunix.f  zfreya.f    znonsym.f  \
+         adcaut.f adcbrm.f adcdo.f adcdrc.f adce.f adcei.f adcerc.f \
+         adcexc.f adcfnm.f adcinit.f adcout.f adcrrc.f adcset.f adcstd.f adctip.f adcxxs.f
+
+
 OBJECTS   = $(SOURCES:.f=.o)
-LOCATION=	-L$(NETCDFHOME)/lib -L$(PGPLOT_DIR) -L$(MPIHOME)/lib -L/usr/X11R6/lib64 
-LIBS=	-lpgplot -lnetcdff -lnetcdf -lmpich -lX11
-INCLUDE=$(MPIHOME)/include
+
+LOCATION= -L/global/homes/s/sfrnk/perlmutter_builds/pgplot/pgplotlib    
+
+LIBS = $(LOCATION) -lpgplot -L/usr/lib64 -lX11
+
+#Location of netcdf.inc:
+# INCLUDE= $(NETCDF_DIR)/include  # No longer needed [2020]
 # -g is full debug;   -gopt allows optimization
-DEBUG     = -g
-OPTIMIZE  = -O
+DEBUG     =  -g -fbacktrace -fbounds-check -ffpe-trap=invalid,zero
+OPTIMIZE  = -Ofast 
 LISTING   = -Mlist/etc/shells
-CSPECIAL  =
-SPECIAL   = -byteswapio -Mbackslash
-LDSPECIAL = -Wl,-noinhibit-exec 
-#COMPILE   = $(COMPILER) -c $(CSPECIAL) -I $(INCLUDE) $(DEBUG) # or use $(OPTIMIZE)
-COMPILE   =  $(COMPILER) -c $(CSPECIAL) -I $(INCLUDE) $(OPTIMIZE) # or use $(DEBUG)
-LOAD      = $(BUILDER) -o $(NAME) $(LDSPECIAL) $(OPTIMIZE) # $(DEBUG)
+CSPECIAL  = #-O1 #-check bounds -check pointers
+#YuP: Flag (-real-size 64) may ruin some pages made by PGPLOT, at Intel/PC and Intel/NERSC 
+#YuP: Flags (-check bounds -check pointers ) make runs slower by 2x.
+SPECIAL   = -fbackslash -fallow-argument-mismatch -fno-align-commons -std=legacy
+LDSPECIAL = 
+#COMPILE   = $(COMPILER) -c $(CSPECIAL) $(INCLUDE) $(DEBUG) # or use $(OPTIMIZE)
+COMPILE   =  $(COMPILER) -c $(SPECIAL) $(INCLUDE) $(OPTIMIZE) # or use $(DEBUG)
+BUILD      = $(BUILDER) -o $(NAME) $(LDSPECIAL) # $(OPTIMIZE) # $(DEBUG)
 PROTECT   = chmod 755
 DELETE    = rm -f
 
@@ -117,8 +179,8 @@ DELETE    = rm -f
 # Written without dependencies, it may be useful to turn of such checking?
 .SUFFIXES:
 
-$(NAME):           $(OBJECTS)
-	$(LOAD)    $(OBJECTS) $(LOCATION) $(LIBS)
+$(NAME): $(OBJECTS)
+	$(BUILD) $(OBJECTS) $(LIBS)
 	$(PROTECT) $(NAME)
 
 # Following use of pattern matching works; 
@@ -128,7 +190,7 @@ $(NAME):           $(OBJECTS)
 #%.o:               %.f        $(INCLUDES)
 #	$(COMPILE) $< -o $@
 
-include deps   #Introduced by John Wright (JCW)
+#include deps   #Introduced by John Wright (JCW)
 $(SOURCES):        $(INCLUDES)
 
 # see Sect. 4.10.1, Static Pattern Rules.
@@ -142,7 +204,7 @@ $(SOURCES):        $(INCLUDES)
 
 rebuild:
 	$(COMPILE) $(SOURCES)
-	$(LOAD) $(OBJECTS) $(LOCATION) $(LIBS)
+	$(BUILD) $(OBJECTS) $(LIBS)
 
 clean:
 	$(DELETE)  $(OBJECTS) *.lst *_mpitmp.f
