@@ -1,74 +1,5 @@
 # makefile producing MPI version of cql3d.
 
-# May/06:  makefile_mpi.xxx  is a system setup by Nikolai Ershov
-#          for creation of mpi version of cql3d from the serial
-#          version.   Therefore, only one version of cql3d needs
-#          be maintained.
-#          Comments (beginning with CMPI) have been inserted in the source.
-#          These are processed using python code from the ./mpi subdirectory
-#          to produce an MPI cql3d version.
-#          The procedure is described in CompX report 
-#          CQL3D_Parallelization_CompX-2006-1.pdf, and has been evolved
-#          by Yuri Petrov.
-#          Please follow this procedure in future cql3d modifications.
-
-#Make sure have intel environment (Intel is default on Cori):
-#module list
-#Else switch environment:
-#For example: module swap PrgEnv-xxx PrgEnv-intel
-
-#make sure have netcdf libraries and includes:
-#module unload darshan; module load cray-netcdf; module load cray-hdf5
-
-#YuP[April 2017] It is strongly advised to add into your .bashrc.ext script:
-#   export FORT_BUFFERED=1
-# or into your .cshrc.ext script:
-#   setenv FORT_BUFFERED 1
-# It was the default option for NERSC in 2016,
-# but it was disabled by NERSC personnel in 2017
-# because of problems with some newer compilers.
-# As a result of this change, the MPI runs became slower by ~3x
-# when there is I/O of data into one file from all cores.
- 
-#Works on Perlmutter YuP[2023], mpilib.f is not needed anymore
-
-# Per 2020-01-16 - Johannes Blaschke (NERSC):  -----------------------------------
-# 1. Add `-lX11` to the LIBS variable (Note that the LIBRARIES variable is no longer
-# used. Instead the make file uses LIBS). So LIBS should read:
-# ```
-# LIBS = $(LOCATION) -lpgplot -lX11
-# ```
-# (note the `-lnetcdf` `-lnetcdff` flags are
-# also no longer needed, cf. point 2 below)
-# 2. You should rely on the compiler wrappers to find all loaded module libraries
-# (such as NetCDF). So you don't need to manually include `$(NETCDF_DIR)` and
-# `-lnetcdf`, etc. The compiler wrapper already does that if the `cray-netcdf` module
-# has been loaded. You can find out what the compiler wrapper already contains by
-# running `cc -v` or `ftn -v`.
-# 3. The location of your `pgplot` library now needs to be included in `LOCATION`.
-# ```
-# LOCATION= -L/global/cfs/cdirs/m77/pgplot.perl.intel
-# (or whatever the path is)
-# ```
-# Also add into your cori_batchscript_mpi  file, just before srun line:
-#  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/global/cfs/cdirs/m77/pgplot.perl.intel
-# --------------------------------------------------------
-# YuP/perNERSCconsulters: Need to use -L/usr/lib64 just before -lX11
-# Also add into your cori_batchscript_mpi  file, just before srun line:
-#  export LD_LIBRARY_PATH=/usr/lib64:$LD_LIBRARY_PATH
-#  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/global/cfs/cdirs/m77/pgplot.perl.intel 
-#----------------  On this subject (from NERSC consulters; 2020-02-05):
-# ... the "-fast" flag is the cause for the final link stage to need -L/usr/lib64 before
-#  -lX11.
-# And without -fast, the -L/usr/lib64 is not needed. 
-# And this "-fast" is also related to  ipo warning messages. 
-# "-fast" includes an option to do ipo (interprocedural optimization), and it fails
-# to find some X11 libraries in /usr/lib64, which by default the compiler should know
-# about this path. I think it is kind of an Intel compiler bug with "-fast". 
-# Recommended: use "-O3" instead of "-fast" to avoid the "-ipo" included in the
-#  "-fast" option.
-#-----------------------------------------------------------------------------------
-
 SHELL     = /bin/sh
 NAME      = xcql3d_mpi_intel.perl
 COMPILER=   ftn
@@ -164,14 +95,10 @@ LIBS = $(LOCATION) -lpgplot -L/usr/lib64 -lX11
 DEBUG     =  -g -fbacktrace -fbounds-check -ffpe-trap=invalid,zero
 OPTIMIZE  = -Ofast 
 LISTING   = -Mlist/etc/shells
-CSPECIAL  = #-O1 #-check bounds -check pointers
-#YuP: Flag (-real-size 64) may ruin some pages made by PGPLOT, at Intel/PC and Intel/NERSC 
-#YuP: Flags (-check bounds -check pointers ) make runs slower by 2x.
 SPECIAL   = -fbackslash -fallow-argument-mismatch -fno-align-commons -std=legacy
 LDSPECIAL = 
-#COMPILE   = $(COMPILER) -c $(CSPECIAL) $(INCLUDE) $(DEBUG) # or use $(OPTIMIZE)
 COMPILE   =  $(COMPILER) -c $(SPECIAL) $(INCLUDE) $(OPTIMIZE) # or use $(DEBUG)
-BUILD      = $(BUILDER) -o $(NAME) $(LDSPECIAL) # $(OPTIMIZE) # $(DEBUG)
+BUILD      = $(BUILDER) -o $(NAME) $(LDSPECIAL) $(OPTIMIZE) # $(DEBUG)
 PROTECT   = chmod 755
 DELETE    = rm -f
 
@@ -183,22 +110,9 @@ $(NAME): $(OBJECTS)
 	$(BUILD) $(OBJECTS) $(LIBS)
 	$(PROTECT) $(NAME)
 
-# Following use of pattern matching works; 
-# it is based on statements in Sect. 10.7 of gmake Manual
-# by Stallman and McGrath.
-# However, the two rules following this seem clearer to me (BobH).
-#%.o:               %.f        $(INCLUDES)
-#	$(COMPILE) $< -o $@
-
-#include deps   #Introduced by John Wright (JCW)
 $(SOURCES):        $(INCLUDES)
 
-# see Sect. 4.10.1, Static Pattern Rules.
-#$(OBJECTS): %.o: %.f    $(INCLUDES)
 %.o: %.f  #    $(INCLUDES)
-#Changes introduced by JCW so obtain saved copy of mpi modified sources
-#	mpi/doparallel.py $< mpitmp.f mpi/mpins_par.f
-#	$(COMPILE) mpitmp.f -o $@
 	mpi/doparallel.py $< $*_mpitmp.f mpi/mpins_par.f
 	$(COMPILE) $*_mpitmp.f -o $@
 
