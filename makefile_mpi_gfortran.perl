@@ -85,7 +85,7 @@ SOURCES  = a_cqlp.f  abchief.f  achief1.f  achiefn.f  aclear.f  ainalloc.f  \
 
 OBJECTS   = $(SOURCES:.f=.o)
 
-LOCATION= -L/global/homes/s/sfrnk/perlmutter_builds/pgplot/pgplotlib    
+LOCATION= -L$(PGPLOT_DIR)    
 
 LIBS = $(LOCATION) -lpgplot -L/usr/lib64 -lX11
 
